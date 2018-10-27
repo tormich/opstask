@@ -1,6 +1,6 @@
 # Hello
 
-Short script to update resources of dockerized
+Script to update resources of dockerized
 application and run it using docker-compose.
 
 # Requirements
