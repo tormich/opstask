@@ -1,15 +1,3 @@
-"""
-TODO:
-
-- Download 'pics.tar.gz'
-
-- Extract it's content to '/public/images' path.
-
-- Create, build & run the App + DB using “docker-compose up” command.
-
-- Check the App's health (See App's healthcheck below) at the end of the deployment flow
-    and fail the deployment flow upon bad App health.
-"""
 import json
 import os
 import subprocess
@@ -81,7 +69,8 @@ def health_check(url: str, attempts: int = 3) -> bool:
                         result['checkDatabase']['success'],
                         result['checkDisk']['success']]):
                     return True
-
+                else:
+                    raise ValueError(f'bad response from health end-point {result}')
         except Exception as e:
             print(f'health check #{attempt+1} failed: "{e}"')
 
