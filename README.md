@@ -5,9 +5,9 @@ application and run it using docker-compose.
 
 # Requirements
 
-python3.7
-docker
-docker-compose
+- python3.7
+- docker
+- docker-compose
 
 # Usage
 
