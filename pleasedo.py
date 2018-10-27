@@ -10,6 +10,7 @@ TODO:
 - Check the App's health (See App's healthcheck below) at the end of the deployment flow
     and fail the deployment flow upon bad App health.
 """
+import json
 import os
 import subprocess
 import sys
@@ -19,29 +20,30 @@ import urllib.error
 
 RESOURCES_TAR_URL = 'https://s3.eu-central-1.amazonaws.com/devops-exercise/pandapics.tar.gz'
 DEFAULT_TEMP = '/tmp'
+HEALTH_URL = 'http://localhost:3000/health'
 
 
 def download(url: str, save_as: str):
     try:
-        a = urllib.request.urlretrieve(url, save_as)
+        urllib.request.urlretrieve(url, save_as)
     except urllib.error.HTTPError as e:
         raise RuntimeError(f'Can\'t download resources from {url}: "{e}"')
 
 
-def extract(tar_path: str, extract_path: str):
-    if not os.path.isdir(extract_path):
-        os.makedirs(extract_path)
+def extract(tar_path: str, out_path: str):
+    if not os.path.isdir(out_path):
+        os.makedirs(out_path)
 
-    args = ['tar', 'xvzf', tar_path, '-C', extract_path]
+    args = ['tar', 'xvzf', tar_path, '-C', out_path]
     try:
         subprocess.check_call(args=args)
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f'Error while extracting resources from {tar_path} to {extract_path}: "{e}"')
+        raise RuntimeError(f'Error while extracting resources from {tar_path} to {out_path}: "{e}"')
 
 
-def make_compose_yaml(app_path: str):
+def make_compose_yaml(app_path: str, out_path: str):
     db_path = os.path.join(app_path, 'db')
-    return f'''
+    yaml = f'''
         version: '3'
         services:
           web:
@@ -50,15 +52,34 @@ def make_compose_yaml(app_path: str):
              - "3000:3000"
           db:
             build: "{db_path}"'''
+    with open(out_path, 'w') as f:
+        f.write(yaml)
 
 
 def docker_compose_up(yaml_dir):
-    args = ['docker-compose', '<<', 'echo', f'"{yaml}"']
+    args = ['docker-compose', 'up']
     try:
-        subprocess.check_call(args=args)
+        proc = subprocess.Popen(args=args, cwd=yaml_dir, shell=False, stdout=subprocess.DEVNULL)
+
     except subprocess.CalledProcessError as e:
-        print(yaml)
         raise RuntimeError(f'Error while running docker-compose: "{e}"')
+
+
+def health_check(url: str) -> bool:
+    for attempt in range(1, 7):
+        time.sleep(5)
+        try:
+            with urllib.request.urlopen(url) as response:
+                result = json.loads(response.read())
+                if all([result['isSuccessful'],
+                        result['checkDatabase']['success'],
+                        result['checkDisk']['success']]):
+                    return True
+
+        except Exception as e:
+            print(f'health check #{attempt} failed: "{e}"')
+
+    return False
 
 
 if __name__ == '__main__':
@@ -76,12 +97,14 @@ if __name__ == '__main__':
     download(url=RESOURCES_TAR_URL, save_as=tar_path)
 
     resources_path = os.path.join(app_path, 'public', 'images')
-    extract(tar_path=tar_path, extract_path=resources_path)
+    extract(tar_path=tar_path, out_path=resources_path)
 
     yaml_dir = os.path.join(temp_path, f'app-dc-{timestamp}')
     yaml_path = os.path.join(yaml_dir, 'docker_compose.yml')
-    with open(yaml_path, 'w') as f:
-        f.write(make_compose_yaml(app_path=app_path))
-    docker_compose_up(yaml_path=yaml_path)
+    os.makedirs(yaml_dir)
 
+    make_compose_yaml(app_path=app_path, out_path=yaml_path)
+    docker_compose_up(yaml_dir=yaml_dir)
+
+    health_check(HEALTH_URL)
     print('Grate success!')
