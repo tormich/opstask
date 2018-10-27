@@ -1,7 +1,7 @@
 """
 TODO:
 
-- Download 'https://s3.eu-central-1.amazonaws.com/devops-exercise/pandapics.tar.gz'
+- Download 'pics.tar.gz'
 
 - Extract it's content to '/public/images' path.
 
@@ -18,8 +18,7 @@ import time
 import urllib.request
 import urllib.error
 
-# RESOURCES_TAR_URL = 'https://s3.eu-central-1.amazonaws.com/devops-exercise/pandapics.tar.gz'
-RESOURCES_TAR_URL = 'http://localhost:3000'
+
 DEFAULT_TEMP = '/tmp'
 HEALTH_URL = 'http://localhost:3000/health'
 
@@ -90,18 +89,19 @@ def health_check(url: str, attempts: int = 3) -> bool:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        app_path, temp_path = sys.argv[1], DEFAULT_TEMP
-    elif len(sys.argv) == 3:
-        app_path, temp_path = sys.argv[1:]
+    if len(sys.argv) == 3:
+        resources_tar_url, app_path = sys.argv[1:]
+        temp_path = DEFAULT_TEMP
+    elif len(sys.argv) == 4:
+        resources_tar_url, app_path, temp_path = sys.argv[1:]
     else:
         raise AttributeError(
-            f'Application path is missing. Please run: >> '
-            f'"python {sys.argv[0]} /application/path [/tmp/path]"')
+            f'Application path or tar url missing. Please run: >> '
+            f'python {sys.argv[0]} "https://tar-url" "/application/path" "[/tmp/path]"')
 
     timestamp = int(time.time())
     tar_path = os.path.join(temp_path, f'app-res-{timestamp}.tar.gz')
-    download(url=RESOURCES_TAR_URL, save_as=tar_path)
+    download(url=resources_tar_url, save_as=tar_path)
 
     resources_path = os.path.join(app_path, 'public', 'images')
     extract(tar_path=tar_path, out_path=resources_path)
