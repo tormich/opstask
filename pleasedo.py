@@ -18,7 +18,8 @@ import time
 import urllib.request
 import urllib.error
 
-RESOURCES_TAR_URL = 'https://s3.eu-central-1.amazonaws.com/devops-exercise/pandapics.tar.gz'
+# RESOURCES_TAR_URL = 'https://s3.eu-central-1.amazonaws.com/devops-exercise/pandapics.tar.gz'
+RESOURCES_TAR_URL = 'http://localhost:3000'
 DEFAULT_TEMP = '/tmp'
 HEALTH_URL = 'http://localhost:3000/health'
 
@@ -51,22 +52,28 @@ def make_compose_yaml(app_path: str, out_path: str):
             ports:
              - "3000:3000"
           db:
-            build: "{db_path}"'''
+            build: "{db_path}"
+            ports:
+             - 27017:27017
+            '''
+
     with open(out_path, 'w') as f:
         f.write(yaml)
 
 
 def docker_compose_up(yaml_dir):
-    args = ['docker-compose', 'up']
+    build_cmd = 'docker-compose build'
+    up_cmd = ['docker-compose', 'up']
     try:
-        proc = subprocess.Popen(args=args, cwd=yaml_dir, shell=False, stdout=subprocess.DEVNULL)
+        subprocess.check_call(args=build_cmd, cwd=yaml_dir, shell=True)
+        subprocess.Popen(args=up_cmd, cwd=yaml_dir, shell=False, stdout=subprocess.DEVNULL)
 
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f'Error while running docker-compose: "{e}"')
 
 
-def health_check(url: str) -> bool:
-    for attempt in range(1, 7):
+def health_check(url: str, attempts: int = 3) -> bool:
+    for attempt in range(0, attempts):
         time.sleep(5)
         try:
             with urllib.request.urlopen(url) as response:
@@ -77,7 +84,7 @@ def health_check(url: str) -> bool:
                     return True
 
         except Exception as e:
-            print(f'health check #{attempt} failed: "{e}"')
+            print(f'health check #{attempt+1} failed: "{e}"')
 
     return False
 
