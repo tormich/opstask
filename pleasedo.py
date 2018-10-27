@@ -97,7 +97,7 @@ if __name__ == '__main__':
     else:
         raise AttributeError(
             f'Application path or tar url missing. Please run: >> '
-            f'python {sys.argv[0]} "https://tar-url" "/application/path" "[/tmp/path]"')
+            f'python {sys.argv[0]} "https://tar-url" "/application/path" ["/tmp/path"]')
 
     timestamp = int(time.time())
     tar_path = os.path.join(temp_path, f'app-res-{timestamp}.tar.gz')
