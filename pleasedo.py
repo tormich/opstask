@@ -75,7 +75,7 @@ def health_check(url: str, attempts: int = 3) -> bool:
     for attempt in range(0, attempts):
         time.sleep(5)
         try:
-            with urllib.request.urlopen(url) as response:
+            with urllib.request.urlopen(url, timeout=2) as response:
                 result = json.loads(response.read())
                 if all([result['isSuccessful'],
                         result['checkDatabase']['success'],
@@ -113,5 +113,7 @@ if __name__ == '__main__':
     make_compose_yaml(app_path=app_path, out_path=yaml_path)
     docker_compose_up(yaml_dir=yaml_dir)
 
-    health_check(HEALTH_URL)
-    print('Grate success!')
+    if health_check(HEALTH_URL, attempts=3):
+        print('Grate success!')
+    else:
+        raise RuntimeError('Health check failed.')
