@@ -6,7 +6,6 @@ import time
 import urllib.request
 import urllib.error
 
-
 DEFAULT_TEMP = '/tmp'
 HEALTH_URL = 'http://localhost:3000/health'
 
@@ -40,8 +39,6 @@ def make_compose_yaml(app_path: str, out_path: str):
              - "3000:3000"
           db:
             build: "{db_path}"
-            ports:
-             - 27017:27017
             '''
 
     with open(out_path, 'w') as f:
@@ -102,7 +99,10 @@ if __name__ == '__main__':
     make_compose_yaml(app_path=app_path, out_path=yaml_path)
     docker_compose_up(yaml_dir=yaml_dir)
 
-    if health_check(HEALTH_URL, attempts=3):
+    try:
+        if not health_check(HEALTH_URL, attempts=3):
+            raise RuntimeError(f'Health check failed.')
         print('Grate success!')
-    else:
-        raise RuntimeError('Health check failed.')
+    finally:
+        print('cleaning...')
+        subprocess.check_call(['rm', '-rf', yaml_dir, tar_path])
