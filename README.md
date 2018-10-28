@@ -8,6 +8,7 @@ application and run it using docker-compose.
 - python3.7
 - docker
 - docker-compose
+- tar
 
 # Usage
 
