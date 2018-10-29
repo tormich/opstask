@@ -19,5 +19,5 @@ For example `/afolder`.
 
 ```
 cd /afolder/opstask
-python3.7 pleasedo.py tar_url app_path [temp_path]
+python3.7 pleasedo.py "https://example.com/r.tar.gz" "/afolder/ops-exercise" "/tmp"
 ```
