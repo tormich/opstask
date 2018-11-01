@@ -12,15 +12,12 @@ application and run it using docker-compose.
 
 # Usage
 
-Assuming you already "git clone"ed your application
-and this script in to a folder.
-
-For example `/afolder`.
 
 ```
-cd /afolder/opstask
-python3.7 pleasedo.py "https://example.com/r.tar.gz" "/afolder/ops-exercise" "/tmp"
+python3.7 pleasedo.py
 ```
+
+Use `sudo` if your user is not in the docker group. 
 
 # Flow
 
