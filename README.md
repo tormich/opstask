@@ -8,6 +8,7 @@ application and run it using docker-compose.
 - python3.7
 - docker
 - docker-compose
+- tar
 
 # Usage
 
@@ -18,5 +19,15 @@ For example `/afolder`.
 
 ```
 cd /afolder/opstask
-python3.7 pleasedo.py tar_url app_path [temp_path]
+python3.7 pleasedo.py "https://example.com/r.tar.gz" "/afolder/ops-exercise" "/tmp"
 ```
+
+# Flow
+
+- Download tar.gz
+- Unpuck it in to `/afolder/ops-exercise/public/images`
+- Create `docker-compose.yaml`
+- docker-compose build
+- docker-compose run
+- Check health
+- Remove downloaded tar.gz and generated yaml
