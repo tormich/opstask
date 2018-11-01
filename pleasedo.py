@@ -9,6 +9,11 @@ import urllib.error
 DEFAULT_TEMP = '/tmp'
 HEALTH_URL = 'http://localhost:3000/health'
 
+FILE_URL = 'https://s3.eu-central-1.amazonaws.com/devops-exercise/pandapics.tar.gz'
+DOCKER_COMPOSE_YAML_DIR = '.'
+APP_PATH = './ops-exercise/'
+TEMP_PATH = './tmp/'
+
 
 def download(url: str, save_as: str):
     try:
@@ -26,23 +31,6 @@ def extract(tar_path: str, out_path: str):
         subprocess.check_call(args=args)
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f'Error while extracting resources from {tar_path} to {out_path}: "{e}"')
-
-
-def make_compose_yaml(app_path: str, out_path: str):
-    db_path = os.path.join(app_path, 'db')
-    yaml = f'''
-        version: '3'
-        services:
-          web:
-            build: "{app_path}"
-            ports:
-             - "3000:3000"
-          db:
-            build: "{db_path}"
-            '''
-
-    with open(out_path, 'w') as f:
-        f.write(yaml)
 
 
 def docker_compose_up(yaml_dir):
@@ -75,34 +63,21 @@ def health_check(url: str, attempts: int = 3) -> bool:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 3:
-        resources_tar_url, app_path = sys.argv[1:]
-        temp_path = DEFAULT_TEMP
-    elif len(sys.argv) == 4:
-        resources_tar_url, app_path, temp_path = sys.argv[1:]
-    else:
-        raise AttributeError(
-            f'Application path or tar url missing. Please run: >> '
-            f'python {sys.argv[0]} "https://tar-url" "/application/path" ["/tmp/path"]')
-
     timestamp = int(time.time())
-    tar_path = os.path.join(temp_path, f'app-res-{timestamp}.tar.gz')
-    download(url=resources_tar_url, save_as=tar_path)
+    tar_path = os.path.join(TEMP_PATH, f'app-res-{timestamp}.tar.gz')
 
-    resources_path = os.path.join(app_path, 'public', 'images')
+    print(f'Downloading "{FILE_URL}"')
+    download(url=FILE_URL, save_as=tar_path)
+
+    resources_path = os.path.join(APP_PATH, 'public', 'images')
+
+    print(f'Extracting images to "{resources_path}"')
     extract(tar_path=tar_path, out_path=resources_path)
 
-    yaml_dir = os.path.join(temp_path, f'app-dc-{timestamp}')
-    yaml_path = os.path.join(yaml_dir, 'docker_compose.yml')
-    os.makedirs(yaml_dir)
+    docker_compose_up(yaml_dir=DOCKER_COMPOSE_YAML_DIR)
 
-    make_compose_yaml(app_path=app_path, out_path=yaml_path)
-    docker_compose_up(yaml_dir=yaml_dir)
-
-    try:
-        if not health_check(HEALTH_URL, attempts=3):
-            raise RuntimeError(f'Health check failed.')
+    if not health_check(HEALTH_URL, attempts=3):
+        print(f'Health check failed.')
+        exit(1)
+    else:
         print('Grate success!')
-    finally:
-        print('cleaning...')
-        subprocess.check_call(['rm', '-rf', yaml_dir, tar_path])
