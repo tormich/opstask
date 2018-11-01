@@ -23,8 +23,8 @@ Use `sudo` if your user is not in the docker group.
 
 - Download tar.gz
 - Unpuck it in to `/afolder/ops-exercise/public/images`
-- Create `docker-compose.yaml`
+- ~~Create `docker-compose.yaml`.~~
 - docker-compose build
 - docker-compose run
 - Check health
-- Remove downloaded tar.gz and generated yaml
+- ~~Remove downloaded tar.gz and generated yaml~~
